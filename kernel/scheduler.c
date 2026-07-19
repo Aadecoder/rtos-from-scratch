@@ -2,6 +2,11 @@
 
 #define NUM_OF_THREADS 2
 #define STACKSIZE 256
+#define SHPR3 (*(volatile uint32_t*)0xE000ED20)
+#define ICSR (*(volatile uint32_t*)0xE000ED04)
+#define SYST_CSR (*(volatile uint32_t*)0xE000E010)
+#define SYST_RVR (*(volatile uint32_t*)0xE000E014)
+#define SYST_CVR (*(volatile uint32_t*)0xE000E018)
 
 void yield(void);
 
@@ -26,16 +31,19 @@ void kernelInit(void){
     tcbs[1].nextPt = &tcbs[0];
 }
 
+volatile uint32_t task1_count = 0;
+volatile uint32_t task2_count = 0;
+
 // Task Functions
 void task1(void){
     while(1){
-        yield();
+        task1_count++;
     }
 }
 
 void task2(void){
     while(1){
-        yield();
+        task2_count++;
     }
 }
 
@@ -76,7 +84,7 @@ void task_init(tcb_t *taskHandler, void (*taskFunc)(void)){
     *taskHandler->stackPt = 0x04040404; // R4
 }
 
-__attribute__((naked))void PendSV_Handler(void){
+extern __attribute__((naked))void PendSV_Handler(void){
     // Save the current task context
     // Push registers R4 to R11 to PSP
     __asm("MRS R0, PSP"); // read PSP of currect task into R0
@@ -105,12 +113,26 @@ __attribute__((naked))void PendSV_Handler(void){
     __asm("BX LR");
 }
 
-__attribute__((naked)) void SVC_Handler(void) {
+void systick_init(uint32_t freq_hz){
+    uint32_t reload = (12000000 / freq_hz) - 1;
+    SYST_RVR = reload;
+    SYST_CVR = 0;
+    SYST_CSR = 0x7;
+}
+
+extern void Systick_Handler(void){
+    ICSR |= (1UL << 28);
+
+    __asm volatile("dsb");
+    __asm volatile("isb");
+}
+
+extern __attribute__((naked)) void SVC_Handler(void) {
     __asm volatile (
         "LDR R0, =pcurntTcb     \n"
         "LDR R0, [R0]           \n"   // R0 = pcurntTcb (current task TCB)
         "LDR R0, [R0]           \n"   // R0 = stackPt
-        "ADD R0, R0, #32        \n"   // point to exception frame
+        "LDMIA R0!, {r4-r11}    \n"
         "MSR PSP, R0            \n"
         "MRS R0, CONTROL        \n"
         "ORR R0, R0, #2         \n"   // set SPSEL
@@ -121,19 +143,19 @@ __attribute__((naked)) void SVC_Handler(void) {
     );
 }
 
-void Systick_Handler(void){
-    // Trigger PendSV (set bit 28 of ICSR = 0xE000ED04)
-    *(volatile uint32_t *)0xE000ED04 = (1 << 28);
-}
-
 void yield(void){
-    Systick_Handler();
+    ICSR |= (1UL << 28);
+
+    __asm volatile("dsb");
+    __asm volatile("isb");
 }
 
 int main(void){
     kernelInit();
     task_init(&tcbs[0], task1);
     task_init(&tcbs[1], task2);
+    systick_init(1000);
+    SHPR3 |= (0xFF << 16);   // PendSV lowest priority
     pcurntTcb = &tcbs[0];
     __asm volatile ("SVC #0");   // triggers SVC exception
     while(1);

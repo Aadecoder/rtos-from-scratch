@@ -7,4 +7,4 @@ run:
 	qemu-system-arm -M lm3s6965evb -cpu cortex-m3 -nographic -kernel kernel.elf -S -s
 
 debug:
-	arm-none-eabi-gdb kernel.elf
+	arm-none-eabi-gdb kernel.elf -ex "target remote :1234"
