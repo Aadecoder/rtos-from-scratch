@@ -21,7 +21,7 @@ void taskSuspend(taskHandle_t task);
 void taskResume(taskHandle_t task);
 
 // Exit a RTOS Task
-void taskExit(taskHandle_t task);
+void taskExit(void);
 
 // Get Next Task
 tcb_t *pGetNextTask(void);

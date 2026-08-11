@@ -11,6 +11,7 @@ typedef struct{
 extern tcbQueue_t readyQueue[NO_OF_THREADS];
 extern tcbQueue_t blockedQueue[NO_OF_THREADS];
 extern tcbQueue_t delayedQueue[NO_OF_THREADS];
+extern uint32_t readyBitMap;
 
 // Select Next Task for Round Robin Scheduling
 void selectNextTaskRoundRobin(tcb_t* taskHandler);

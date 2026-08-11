@@ -40,13 +40,13 @@ void selectNextTask(void){
         return;
     }
 
-    if (task->readyNxt){
-        list->head = task->readyNxt;
-        list->head->readyPrev = NULL;
+    if (task->rdy_next){
+        list->head = task->rdy_next;
+        list->head->rdy_prev = NULL;
 
-        list->tail->readyNxt = task;
-        task->readyPrev = list->tail;
-        task->readyNxt = NULL;
+        list->tail->rdy_next = task;
+        task->rdy_prev = list->tail;
+        task->rdy_next = NULL;
         list->tail = task;
     }
 
