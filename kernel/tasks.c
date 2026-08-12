@@ -2,8 +2,6 @@
 #include "../Inc/types.h"
 #include "../Inc/port.h"
 #include "../Inc/scheduler.h"
-#include <cstdlib>
-#include <stdint.h>
 
 
 tcb_t taskArray[MAX_TASKS];
@@ -252,27 +250,43 @@ void removeTaskFromDelayQueue(tcb_t *task){
 
     task->dl_next = NULL;
     task->dl_prev = NULL;
-    task->task_id = 0;
+    task->delay_ticks = 0;
 }
 
+void moveTaskToReady(tcb_t *task){
+    if (task->state == BLOCKED){
+        removeTaskFromDelayQueue(task);
+    }
 
+    if (task->wt_next || task->wait_obj){
+        task->wt_next = NULL;
+        task->wait_obj = NULL;
+    }
 
+    task->state = READY;
+    addTaskToReadyQueue(task);
+}
 
+uint32_t getTickCount(void){
+    return tickCount;
+}
 
+void taskIncrementTick(void){
+    tcb_t *task = pDelayedQueue;
+    tcb_t *next;
 
+    tickCount++;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    while (task != NULL){
+        next = task->dl_next;
+        if (task->delay_ticks > 0){
+            task->delay_ticks--;
+        }
+        if (task->delay_ticks == 0){
+            moveTaskToReady(task);
+        }else{
+            break;
+        }
+        task = next;
+    }
+}
