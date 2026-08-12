@@ -16,6 +16,6 @@ void pendSV(void);
 uint32_t enterCritical(void);
 void exitCritical(uint32_t mask);
 
-void portMalloc(uint32_t size);
+void *pPortMalloc(uint32_t size);
 
 #endif
