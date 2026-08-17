@@ -67,15 +67,19 @@ taskHandle_t createTask(void (*taskFunc)(void*), const char *name, uint32_t stac
         priority = MAX_PRIORITIES - 1;
     }
 
-        stack_words = MIN_STACK_SIZE;
     if (stack_words < MIN_STACK_SIZE){
+        stack_words = MIN_STACK_SIZE;
     }
+
+    mask = enterCritical();
 
     tcb = pAllocateTcb();
     if (tcb == NULL){
         exitCritical(mask);
         return NULL;
     }
+
+    taskInitTcb(tcb);
 
     stack = (uint32_t *)pPortMalloc(stack_words * sizeof(uint32_t));
     if (stack == NULL){
