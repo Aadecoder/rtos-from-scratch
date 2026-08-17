@@ -21,6 +21,7 @@ static tcb_t *pAllocateTcb(void){
     return NULL;
 }
 
+/* Initializes a TCB with default values */
 static void taskInitTcb(tcb_t *tcb){
     tcb->sp = NULL;
     tcb->priority = 0;
@@ -37,6 +38,7 @@ static void taskInitTcb(tcb_t *tcb){
     tcb->recursive_count = 0;
 }
 
+/* Allocates stack space for any new task */
 void *pPortMalloc(uint32_t size){
     static uint8_t heap[4096];
     static uint32_t heapOffset = 0;
@@ -51,6 +53,7 @@ void *pPortMalloc(uint32_t size){
     return ptr;
 }
 
+/* Exits a task and keeps it waiting for an interrupt (The stack of the task is not freed and is still available) */
 void taskExit(void){
     __disable_irq();
     while(1){
@@ -58,6 +61,7 @@ void taskExit(void){
     }
 }
 
+/* Creates a Task */
 taskHandle_t createTask(void (*taskFunc)(void*), const char *name, uint32_t stack_words, void *param, uint32_t priority){
     uint32_t mask;
     tcb_t *tcb;
@@ -122,6 +126,7 @@ taskHandle_t createTask(void (*taskFunc)(void*), const char *name, uint32_t stac
     return tcb;
 }
 
+/* Generates a delay of particular ticks */
 void taskDelay(uint32_t ticks){
     uint32_t mask;
 
@@ -141,6 +146,7 @@ void taskDelay(uint32_t ticks){
     taskYield();
 }
 
+/* Suspends a task */
 void taskSuspend(taskHandle_t task){
     uint32_t mask = enterCritical();
 
@@ -163,6 +169,7 @@ void taskSuspend(taskHandle_t task){
     }
 }
 
+/* Resumes a task and makes changes its state to READY */
 void taskResume(taskHandle_t task){
     uint32_t mask = enterCritical();
 
@@ -180,6 +187,7 @@ void taskResume(taskHandle_t task){
     exitCritical(mask);
 }
 
+/* Adds task to Ready Queue */
 void addTaskToReadyQueue(tcb_t *task){
     uint32_t priority = task->priority;
     tcbQueue_t *queue = &readyQueue[priority];
@@ -198,6 +206,7 @@ void addTaskToReadyQueue(tcb_t *task){
     }
 }
 
+/* Removes Task from Ready Queue */
 void removeTaskFromReadyQueue(tcb_t *task){
     uint32_t priority = task->priority;
     tcbQueue_t *queue = &readyQueue[priority];
@@ -219,6 +228,7 @@ void removeTaskFromReadyQueue(tcb_t *task){
     }
 }
 
+/* Adds task to Delay Queue */
 void addTaskToDelayQueue(tcb_t *task){
     tcb_t *prev = NULL;
     tcb_t *curr = pDelayedQueue;
@@ -242,6 +252,7 @@ void addTaskToDelayQueue(tcb_t *task){
     }
 }
 
+/* Removes Task from Delay Queue */
 void removeTaskFromDelayQueue(tcb_t *task){
     if (task->dl_prev){
         task->dl_prev->dl_next = task->dl_next;
@@ -258,6 +269,7 @@ void removeTaskFromDelayQueue(tcb_t *task){
     task->delay_ticks = 0;
 }
 
+/* Moves task to Ready from a BLOCKED state */
 void moveTaskToReady(tcb_t *task){
     if (task->state == BLOCKED){
         removeTaskFromDelayQueue(task);
@@ -276,6 +288,7 @@ uint32_t getTickCount(void){
     return tickCount;
 }
 
+/* Increments the Tick of the clock */
 void taskIncrementTick(void){
     tcb_t *task = pDelayedQueue;
     tcb_t *next;
