@@ -10,9 +10,10 @@ tcb_t *pCurrentTcb = NULL;
 tcb_t *pDelayedQueue = NULL;
 static uint32_t tickCount = 0;
 
+/* This function is used to Allocate Memory slot from taskArray to the tcb */
 static tcb_t *pAllocateTcb(void){
     for (uint32_t i=0; i < MAX_TASKS; i++){
-        if (taskArray[i].state == SUSPENDED && taskArray[i].task_id == 0){
+        if (taskArray[i].state == UNUSED){
             taskArray[i].task_id = i+1;
             return &taskArray[i];
         }
@@ -24,7 +25,7 @@ static void taskInitTcb(tcb_t *tcb){
     tcb->sp = NULL;
     tcb->priority = 0;
     tcb->base_priority = 0;
-    tcb->state = SUSPENDED;
+    tcb->state = UNUSED;
     tcb->delay_ticks = 0;
     tcb->name = NULL;
     tcb->rdy_next = NULL;

@@ -3,6 +3,7 @@
 #include "stm32f4xx.h"
 
 typedef enum{
+    UNUSED,
 	READY,
 	BLOCKED,
 	RUNNING,
