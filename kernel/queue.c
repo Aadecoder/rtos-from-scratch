@@ -3,7 +3,7 @@
 #include "../Inc/scheduler.h"
 #include "../Inc/tasks.h"
 
-static void prevUnblockFirstWaiter(tcb_t **list){
+static void unblockFirstWaitingTask(tcb_t **list){
     tcb_t *task = *list;
     if (task == NULL){
         return;
@@ -20,7 +20,7 @@ static void prevUnblockFirstWaiter(tcb_t **list){
     addTaskToReadyQueue(task);
 }
 
-static void prevBlockOnQueue(tcb_t **wait_list, queue_t *queue, uint32_t timeout){
+static void blockCurrentTaskOnQueue(tcb_t **wait_list, queue_t *queue, uint32_t timeout){
     tcb_t *task = pCurrentTcb;
     
     task->wt_next = *wait_list;
@@ -70,7 +70,7 @@ uint32_t queueSend(queueHandle_t queue, const void *item, uint32_t timeout){
             result = 0;
             goto exit;
         }
-        prevBlockOnQueue(&queue->tx_wait_list, queue, timeout);
+        blockCurrentTaskOnQueue(&queue->tx_wait_list, queue, timeout);
         exitCritical(mask);
         taskYield();
         mask = enterCritical();
@@ -91,7 +91,7 @@ uint32_t queueSend(queueHandle_t queue, const void *item, uint32_t timeout){
         queue->tail = 0;
     }
     queue->count++;
-    prevUnblockFirstWaiter(&queue->rx_wait_list);
+    unblockFirstWaitingTask(&queue->rx_wait_list);
 
 exit:
     exitCritical(mask);
@@ -111,7 +111,7 @@ uint32_t queueReceive(queueHandle_t queue, void *buffer, uint32_t timeout){
             goto exit;
         }
 
-        prevBlockOnQueue(&queue->rx_wait_list, queue, timeout);
+        blockCurrentTaskOnQueue(&queue->rx_wait_list, queue, timeout);
         exitCritical(mask);
         taskYield();
         mask = enterCritical();
@@ -133,7 +133,7 @@ uint32_t queueReceive(queueHandle_t queue, void *buffer, uint32_t timeout){
     }
     queue->count--;
 
-    prevUnblockFirstWaiter(&queue->tx_wait_list);
+    unblockFirstWaitingTask(&queue->tx_wait_list);
 
 exit:
     exitCritical(mask);
