@@ -3,6 +3,7 @@
 #include "../Inc/scheduler.h"
 #include "../Inc/tasks.h"
 
+/* Unblocks the Receiver */
 static void unblockFirstWaitingTask(tcb_t **list){
     tcb_t *task = *list;
     if (task == NULL){
@@ -20,6 +21,7 @@ static void unblockFirstWaitingTask(tcb_t **list){
     addTaskToReadyQueue(task);
 }
 
+/* Blocks the sender */
 static void blockCurrentTaskOnQueue(tcb_t **wait_list, queue_t *queue, uint32_t timeout){
     tcb_t *task = pCurrentTcb;
     
@@ -36,6 +38,7 @@ static void blockCurrentTaskOnQueue(tcb_t **wait_list, queue_t *queue, uint32_t 
     }
 }
 
+/* Creates and Initializes a queue */
 queueHandle_t queueCreate(uint32_t length, uint32_t itemSize){
     queue_t *queue;
     uint32_t mask = enterCritical();
@@ -58,6 +61,7 @@ queueHandle_t queueCreate(uint32_t length, uint32_t itemSize){
     return queue;
 }
 
+/* Sends stuff to queue */
 uint32_t queueSend(queueHandle_t queue, const void *item, uint32_t timeout){
     uint32_t mask;
     uint32_t result = 1;
@@ -98,6 +102,7 @@ exit:
     return result;
 }
 
+/* Receives stuff from queue */
 uint32_t queueReceive(queueHandle_t queue, void *buffer, uint32_t timeout){
     uint32_t mask;
     uint32_t result = 1;
